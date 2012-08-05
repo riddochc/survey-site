@@ -1,12 +1,11 @@
 #!/usr/bin/env ruby
 
 require 'sinatra'
-require 'pg'
-
-conn = PG.connection.new(dbname: 'survey')
+require 'erb'
 
 get %r{^/step/(\d+)} do |i|
-  "Currently on step #{i}<p><form method=\"post\" action=\"/step/#{i}\"><input type=\"submit\"/></form></p>"
+  step = i.to_i
+  erb :step, :locals => {:s => step}
 end
 
 post %r{^/step/(\d+)} do |i|
