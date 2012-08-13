@@ -2,7 +2,29 @@
 <p><%= q[:instructions] %></p>
 
 
+    <div class='yui3-skin-sam'>
+      <div id='checkboxContainer'>
+        <% work_fns.each do |fn| %>
+          <p><button class='checkbox'><%= fn[:work_function] %></button></p>
+        <% end %>
+      </div>
+    </div>
   <form method="post" action="/step/<%= s %>">
     <input type="submit"/>
   </form>
 
+<script>
+YUI().use('button-group', function(Y){
+
+    // A group of checkbox-like buttons
+    var buttonGroupCB = new Y.ButtonGroup({
+        srcNode: '#checkboxContainer',
+        type: 'checkbox',
+        on: {
+            'selectionChange': function(e){
+                var selection = buttonGroupCB.getSelectedButtons();
+                Y.log('buttonGroup2 selected count = ' + selection.length);
+            }
+        }
+      }).render();
+</script>

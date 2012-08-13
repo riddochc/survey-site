@@ -39,11 +39,16 @@ get %r{^/step/(\d+)} do |i|
   if question.nil?
     raise NoSuchQuestion, step
   end
+  r = Random.new((Time.now.to_f * 1000).to_i)
   case question[:question_type_id]
   when 1
-    erb :rank, :locals => {:q => question, :s => step}
+    work_fns = DB[:work_functions].sort_by { r.rand }.to_a
+    session[:work_function_order] = work_fns.map {|wf| wf[:id]}
+    erb :rank, :locals => {:q => question, :s => step, :seed => r.seed, :work_fns => work_fns}
   when 2
-    erb :multiple_selection, :locals => {:q => question, :s => step}
+    work_fns = DB[:work_functions].sort_by { r.rand }.to_a
+    session[:work_function_order] = work_fns.map {|wf| wf[:id]}
+    erb :multiple_selection, :locals => {:q => question, :s => step, :work_fns => work_fns}
   when 3
     completions = DB[:hospices].order(:name).map {|h| h[:name] }.to_json
     erb :single_selection_or_text_entry,
