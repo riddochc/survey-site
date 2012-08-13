@@ -4,8 +4,12 @@ require 'sinatra'
 require 'erb'
 require 'sequel'
 require 'sinatra/cookies'
+require 'json'
 
 class NoSuchQuestion < Exception
+end
+
+class InvalidInput < Exception
 end
 
 #set :server, :thin
@@ -41,7 +45,10 @@ get %r{^/step/(\d+)} do |i|
   when 2
     erb :multiple_selection, :locals => {:q => question, :s => step}
   when 3
-    erb :single_selection_or_text_entry, :locals => {:q => question, :s => step}
+    completions = DB[:hospices].order(:name).map {|h| h[:name] }.to_json
+    erb :single_selection_or_text_entry,
+      :locals => {:q => question, :s => step,
+                  :c => completions}
   else
     "Oops."
   end
@@ -57,6 +64,28 @@ post %r{^/step/(\d+)} do |i|
   number_of_questions = DB[:questions].count
   if step > number_of_questions
     raise NoSuchQuestion, step
+  end
+
+  case step
+  when 1
+    puts "Processing step 1, got text: " + params["ac-input"]
+    if params["ac-input"] =~ /^([A-Za-z' ]+)$/  # No funny characters in the name.
+      cleaned_input = $1
+    else
+      raise InvalidInput
+    end
+    hospice = DB[:hospices][:name => cleaned_input]
+    if hospice.nil?
+      hospice_id = DB[:hospices] << {:name => cleaned_input}
+    else
+      hospice_id = hospice[:id]
+    end
+    user = session[:user_id]
+    answer_set_id = DB[:answer_sets].insert(:timestamp => Time.now(), :question_id => question[:id], :user_id => user)
+    answer_id = DB[:hospice_answers].insert(:answer_set_id => answer_set_id, :hospice_id => hospice_id)
+    puts "Recorded answer: #{answer_id}"
+  else
+    "Oops."
   end
 
   # Process answer for question
