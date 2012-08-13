@@ -74,7 +74,7 @@ end
 
 [{:type => "rank"},
  {:type => "multiple selection"},
- {:type => "single selection with optional text entry"}].each { |row|
+ {:type => "single selection or text entry"}].each { |row|
   DB[:question_types].insert(row)
 }
 
