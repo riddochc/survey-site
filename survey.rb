@@ -20,6 +20,7 @@ set :session_secret, "something long and hard to guess"
 # If the browser isn't already from around here, start them 
 # at the right place, make a new user, and give a cookie.
 before do
+  puts "Request for: #{request.url} - running before..."
   if ((session[:ip_address] != request.ip) or
       (session[:created_at] < (Time.now() - 60 * 10))) # Session older than 10 minutes?
     puts "This looks like a new user!"
@@ -89,6 +90,9 @@ post %r{^/step/(\d+)} do |i|
     answer_set_id = DB[:answer_sets].insert(:timestamp => Time.now(), :question_id => question[:id], :user_id => user)
     answer_id = DB[:hospice_answers].insert(:answer_set_id => answer_set_id, :hospice_id => hospice_id)
     puts "Recorded answer: #{answer_id}"
+  when 2
+    puts "Processing step 2."
+
   else
     "Oops."
   end
