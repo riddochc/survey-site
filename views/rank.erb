@@ -1,65 +1,25 @@
 <!-- This page is for a ranking question... -->
 <p><%= q[:instructions] %></p>
 
-
   <form method="post" action="/step/<%= s %>">
-    <div class="yui3-g">
-    <div class="yui3-u-1-2">
-        <div id="demo">
-          <ul><% i = 1 %>
+    <div class="">
+          <ul id="sortable"><% i = 1 %>
               <% work_fns.each do |fn| %>
-                <li><input type="hidden" name="li_<%= i %>" value=""><!-- some javascript? -->
-                <%= fn[:work_function] %></li>
+                <li id="item_<%= i %>" class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><%= fn[:work_function] %></li>
               <% i = i + 1 ; end %>
             </ul>
-        </div>
     </div>
-
-    <div class="yui3-u-1-2">
-        <ol id="eventlog">
-        </ol>
-    </div>
-    </div>
+    <input id="answers" type="hidden" name="arrangement" value="unset">
     <input type="submit"/>
   </form>
 
-  <script>
-  YUI().use('sortable', function (Y) {
-
-    var log, sortable;
-
-    // The node where we'll output the drag-and-drop events.
-    log = Y.one('#eventlog');
-
-    // Our sortable list instance.
-    sortable = new Y.Sortable({
-        container: '#demo ul',
-        nodes    : 'li',
-        opacity  : '0.1'
+<script>
+	$(function() {
+		$('#sortable').sortable();
+    $('#sortable').disableSelection();
+    $('#sortable').bind('sortupdate', function(event, ui) {
+      $('#answers').attr('value', $('#sortable').sortable('toArray'));
     });
-
-    sortable.delegate.after('drag:end', function (e) {
-        var node = sortable.delegate.get('currentNode'),
-            prev = node.previous(),
-            next = node.next(),
-            msg  = '(';
-
-        // Customize the log message based on where the `node` moved to.
-        if (prev && next) {
-            msg += 'between ' + prev.get('id') + ' ' + next.get('id');
-        } else if (prev) {
-            msg += 'after ' + prev.get('id');
-        } else if (next) {
-            msg += 'before ' + next.get('id');
-        }
-
-        msg += node.get('id') + ' ' + new Date().getTime() + ')'
-
-        // Create a new list item and append it to our log of events.
-        // log.append(Y.Node.create('<li />').set('text', msg));
-        log.append(Y.Node.create('<input type="hidden" name="rearrangement" />').set('value', msg));
-    });
-
   });
 </script>
 
