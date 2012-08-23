@@ -1,0 +1,12 @@
+<!-- This page is for a question best answered with a large textbox -->
+<div class="question">
+<p class="instructions"><%= q[:instructions] %></p>
+<form method="post" action="/step/<%= s %>">
+  
+  <textarea autofocus="true" name="comment"
+    class="ui-widget ui-state-default ui-corner-all">
+  </textarea>
+  <p>
+  <input type="submit" value="Send comment"/>
+</form>
+</div>
