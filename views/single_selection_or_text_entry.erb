@@ -1,9 +1,12 @@
 <!-- This page is for a single selection or text entry question... -->
   <form method="post" action="/step/<%= s %>">
-      <label for="ac-input"><p><%= q[:instructions] %></label><br>
-      <input id="ac-input" name="ac-input" type="text">
-      <div>
-        <input type="submit"/>
+      <div class="question">
+        <p class="instructions"><label for="ac-input"><%= q[:instructions] %></label></p>
+        <input class="ui-widget ui-state-default ui-corner-all"
+               id="ac-input" name="ac-input" type="text">
+      <p>
+      <input type="submit" name="Send input" value="Send input"/>
+      </p>
       </div>
   </form>
 
