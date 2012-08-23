@@ -1,30 +1,26 @@
 <!-- This page is for a multiple selection question... -->
-<p><%= q[:instructions] %></p>
-
-
-    <div class='yui3-skin-sam'>
-      <div id='checkboxContainer'>
-        <% work_fns.each do |fn| %>
-          <p><button class='checkbox'><%= fn[:work_function] %></button></p>
+  <div class="question">
+    <p class="instructions"><%= q[:instructions] %></p>
+  </div>
+  <form method="post" action="/step/<%= s %>">
+      <div id='workfns'>
+        <% work_fns.each.with_index do |fn, i| i += 1 %>
+          <p><input type='checkbox' name="fn_<%= i %>" />
+          <label for="fn_<%= i %>"><%= fn[:work_function] %></label>
+          </p>
         <% end %>
       </div>
-    </div>
-  <form method="post" action="/step/<%= s %>">
-    <input type="submit"/>
+      <div class="question">
+        <input type="submit" value="Send selections"/>
+      </div>
   </form>
-
+  </div>
 <script>
-YUI().use('button-group', function(Y){
-
-    // A group of checkbox-like buttons
-    var buttonGroupCB = new Y.ButtonGroup({
-        srcNode: '#checkboxContainer',
-        type: 'checkbox',
-        on: {
-            'selectionChange': function(e){
-                var selection = buttonGroupCB.getSelectedButtons();
-                Y.log('buttonGroup2 selected count = ' + selection.length);
-            }
-        }
-      }).render();
+  $('form').on('submit', function (event) {
+    if ($(":checkbox:checked").length !== 3) {
+      alert("Please check three work functions"); 
+      event.preventDefault();
+    }
+  });
 </script>
+

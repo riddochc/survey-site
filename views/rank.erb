@@ -1,6 +1,6 @@
 <!-- This page is for a ranking question... -->
-<p><%= q[:instructions] %></p>
-
+<script src="/js/jquery.ui.touch-punch.min.js"></script>
+<p class="instructions"><%= q[:instructions] %></p>
   <form method="post" action="/step/<%= s %>">
     <div class="">
           <ul id="sortable"><% i = 1 %>
@@ -10,13 +10,16 @@
             </ul>
     </div>
     <input id="answers" type="hidden" name="arrangement" value="unset">
-    <input type="submit"/>
+    <div class="question">
+      <input type="submit" value="Send rankings"/>
+    </div>
   </form>
 
 <script>
 	$(function() {
 		$('#sortable').sortable();
     $('#sortable').disableSelection();
+    $('#answers').attr('value', '[<%= (1.upto(work_fns.count)).map {|i| "item_#{i}"}.join(", ") %>]');
     $('#sortable').bind('sortupdate', function(event, ui) {
       $('#answers').attr('value', $('#sortable').sortable('toArray'));
     });
