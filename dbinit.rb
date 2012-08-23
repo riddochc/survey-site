@@ -59,6 +59,12 @@ DB.create_table :hospice_answers do
   foreign_key :hospice_id, :hospices
 end
 
+DB.create_table :comments do
+  primary_key :id
+  foreign_key :answer_set_id, :answer_sets
+  String :comment
+end
+
 ["Identifying patient's/family's unique psychosocial needs",
  "Assessing patient/family risk for psychosocial distress or complicated grief",
  "Assessing and enhancing patient/family strengths and coping skills",
@@ -74,15 +80,17 @@ end
 
 [{:type => "rank"},
  {:type => "multiple selection"},
- {:type => "single selection or text entry"}].each { |row|
+ {:type => "single selection or text entry"},
+ {:type => "textbox"}].each { |row|
   DB[:question_types].insert(row)
 }
 
 questions_initial_data = [{:question_type_id => 3, :instructions => "Please select the hospice you are affiliated with."},
- {:question_type_id => 1, :instructions => "Please rank the work functions in terms of importance."},
- {:question_type_id => 1, :instructions => "Please rank the work functions in terms of which require the most work time."},
  {:question_type_id => 2, :instructions => "Please identify three functions from the list that are your personal/professional strengths."},
- {:question_type_id => 2, :instructions => "Please identify three functions from the list that you see to be areas for growth and skill development."}]
+ {:question_type_id => 2, :instructions => "Please identify three functions from the list that you see to be areas for growth and skill development."},
+ {:question_type_id => 1, :instructions => "Please rank the work functions in terms of their importance to you as a social worker.  You can rearrange the order by clicking and dragging each item."},
+ {:question_type_id => 1, :instructions => "Please rank the work functions from most to least work time required.  You can rearrange the order by clicking and dragging each item."},
+ {:question_type_id => 4, :instructions => "Finally, you may provide any comments or further thoughts on the previous questions here."}]
 
 questions_initial_data.each {|row|
   DB[:questions].insert(row)
