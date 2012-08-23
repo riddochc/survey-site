@@ -59,12 +59,6 @@ DB.create_table :hospice_answers do
   foreign_key :hospice_id, :hospices
 end
 
-DB.create_table :comments do
-  primary_key :id
-  foreign_key :answer_set_id, :answer_sets
-  String :comment
-end
-
 ["Identifying patient's/family's unique psychosocial needs",
  "Assessing patient/family risk for psychosocial distress or complicated grief",
  "Assessing and enhancing patient/family strengths and coping skills",
