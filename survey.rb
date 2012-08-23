@@ -6,12 +6,7 @@ require 'sequel'
 require 'sinatra/cookies'
 require 'json'
 require 'logger'
-
-class NoSuchQuestion < Exception
-end
-
-class InvalidInput < Exception
-end
+require 'cgi'
 
 #set :server, :thin
 DB = Sequel.connect('sqlite://survey.sqlite3', :logger => Logger.new('db.log'))
@@ -23,7 +18,7 @@ def users_hospice(question, user, session, params)
     if params["ac-input"] =~ /^([A-Za-z' ]+)$/  # No funny characters in the name.
       cleaned_input = $1
     else
-      raise InvalidInput
+      redirect "/step/#{question[:id]}", 302
     end
     hospice = DB[:hospices][:name => cleaned_input]
     if hospice.nil?
@@ -43,18 +38,54 @@ def work_function_ranking(question, user, session, params)
   puts "Rearrangement: " + rearrangement.join(',')
   puts "Mapping values: " + values.sort.join(',')
   unless (rearrangement.sort == values.sort)
-    raise InvalidInput
+    redirect "/step/#{question[:id]}", 302
   end
   order_by_dbid = rearrangement.map {|i| (mapping.invert)[i]}
-  answer_set_id = DB[:answer_sets].insert(:timestamp => Time.now(), :question_id => question[:id], :user_id => user)
+  answer_set_id = DB[:answer_sets].insert(:timestamp => Time.now(),
+                                          :question_id => question[:id],
+                                          :user_id => user)
   puts "Proper arrangement: " + order_by_dbid.join(',')
   order_by_dbid.each.with_index do |dbid, rank|
-    DB[:rank_answers].insert(:answer_set_id => answer_set_id, :work_function_id => dbid, :rank => rank)
+    DB[:rank_answers].insert(:answer_set_id => answer_set_id,
+                             :work_function_id => dbid,
+                             :rank => rank)
   end
 end
 
 def work_function_selection(question, user, session, params)
-  
+  puts "Work function selection..."
+  mapping = session[:work_function_mapping]
+  values = mapping.values
+  puts "Params inspection: " + params.inspect
+  selections = params.keys
+                 .grep(/fn_\d+$/) {|m| m[/\d+$/].to_i }
+                 .map {|i| (mapping.invert)[i]}
+  # Sanity check:
+  unless (DB[:work_functions].where(:id => selections).count ==
+          selections.length)
+    redirect "/step/#{question[:id]}", 302
+  end
+
+  DB.transaction do
+    answer_set_id = DB[:answer_sets].insert(:timestamp => Time.now(),
+                                            :question_id => question[:id],
+                                            :user_id => user)
+    selections.each do |s|
+      DB[:multiple_selection_answers].insert(:answer_set_id => answer_set_id,
+                                           :work_function_id => s)
+    end
+  end
+end
+
+def store_comments(question, user, session, params)
+  comment = params['comment']
+  DB.transaction do
+    answer_set_id = DB[:answer_sets].insert(:timestamp => Time.now(),
+                                            :question_id => question[:id],
+                                            :user_id => user)
+    DB[:comments].insert(:answer_set_id => answer_set_id,
+                         :comment => comment);
+  end
 end
 
 # If the browser isn't already from around here, start them 
@@ -62,7 +93,7 @@ end
 before do
   puts "Request for: #{request.url} - running before..."
   if ((session[:ip_address] != request.ip) or
-      (session[:created_at] < (Time.now() - 60 * 10))) # Session older than 10 minutes?
+      (session[:created_at] < (Time.now() - 60 * 20))) # Session older than 20 minutes?
     puts "This looks like a new user!"
     session[:ip_address] = request.ip
     session[:created_at] = Time.now()
@@ -82,27 +113,33 @@ get %r{^/step/(\d+)} do |i|
   step = i.to_i
   question = DB[:questions][:id => step]
   if question.nil?
-    raise NoSuchQuestion, step
+    redirect "/step/1", 302
   end
+  question_type = question[:question_type_id]
+
   r = Random.new((Time.now.to_f * 1000).to_i)
-  case question[:question_type_id]
-  when 1
+
+  if [1,2].include?(question_type)
     n = DB[:work_functions].count
     work_fns = DB[:work_functions].sort_by { r.rand }.to_a
     shuffled_order = work_fns.map{|f| f[:id]}
     mapping = {}
     (1..n).to_a.zip(shuffled_order) {|i, j| mapping[j] = i}
     session[:work_function_mapping] = mapping
-    erb :rank, :locals => {:q => question, :s => step, :work_fns => work_fns}
-  when 2
-    work_fns = DB[:work_functions].sort_by { r.rand }.to_a
-    session[:work_function_order] = work_fns.map {|wf| wf[:id]}
-    erb :multiple_selection, :locals => {:q => question, :s => step, :work_fns => work_fns}
-  when 3
+
+    case question_type
+    when 1
+      erb :rank, :locals => {:q => question, :s => step, :work_fns => work_fns}
+    when 2
+      erb :multiple_selection, :locals => {:q => question, :s => step, :work_fns => work_fns}
+    end
+  elsif question_type == 3
     completions = DB[:hospices].order(:name).map {|h| h[:name] }.to_json
     erb :single_selection_or_text_entry,
       :locals => {:q => question, :s => step,
                   :c => completions}
+  elsif question_type == 4
+    erb :textbox, :locals => {:q => question, :s => step}
   else
     "Oops."
   end
@@ -113,11 +150,11 @@ post %r{^/step/(\d+)} do |i|
   step = i.to_i
   question = DB[:questions][:id => step]
   if question.nil?
-    raise NoSuchQuestion, step
+    redirect "/step/1", 302
   end
   number_of_questions = DB[:questions].count
   if step > number_of_questions
-    raise NoSuchQuestion, step
+    redirect "/done", 302
   end
 
   user = session[:user_id]
@@ -126,19 +163,20 @@ post %r{^/step/(\d+)} do |i|
   when 1
     users_hospice(question, user, session, params)
   when 2
-    work_function_ranking(question, user, session, params)
+    work_function_selection(question, user, session, params)
   when 3
-    work_function_ranking(question, user, session, params)
+    work_function_selection(question, user, session, params)
   when 4
-    work_function_selection(question, user, session, params)
+    work_function_ranking(question, user, session, params)
   when 5
-    work_function_selection(question, user, session, params)
+    work_function_ranking(question, user, session, params)
+  when 6
+    store_comments(question, user, session, params)
   else
     "Oops."
   end
 
-  # Process answer for question
-  
+  # Move on to the next question or step.
   if (step < number_of_questions)
     next_step = i.to_i.succ
     next_path = "/step/#{next_step}"
