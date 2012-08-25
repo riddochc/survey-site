@@ -7,11 +7,17 @@ require 'sinatra/cookies'
 require 'json'
 require 'logger'
 require 'cgi'
+require 'yaml'
 
 #set :server, :thin
-DB = Sequel.connect('sqlite://survey.sqlite3', :logger => Logger.new('db.log'))
+
+config = YAML.load_file("/etc/surveyconfig.yaml")
+config[:logger] = Logger.new('db.log')
+
+DB = Sequel.connect(config)
+# DB = Sequel.connect('sqlite://survey.sqlite3', :logger => Logger.new('db.log'))
 enable :sessions
-set :session_secret, "something long and hard to guess"
+set :session_secret, config['session-secret']
 
 def users_hospice(question, user, session, params)
     puts "Processing step 1, got text: " + params["ac-input"]
@@ -90,7 +96,7 @@ end
 
 # If the browser isn't already from around here, start them 
 # at the right place, make a new user, and give a cookie.
-before do
+def establish_session(request)
   puts "Request for: #{request.url} - running before..."
   if ((session[:ip_address] != request.ip) or
       (session[:created_at] < (Time.now() - 60 * 20))) # Session older than 20 minutes?
@@ -106,10 +112,12 @@ before do
 end
 
 get "/" do
+  establish_session(request)
   redirect "/step/1", 302
 end
 
 get %r{^/step/(\d+)} do |i|
+  establish_session(request)
   step = i.to_i
   question = DB[:questions][:id => step]
   if question.nil?
@@ -147,6 +155,7 @@ get %r{^/step/(\d+)} do |i|
 end
 
 post %r{^/step/(\d+)} do |i|
+  establish_session(request)
   step = i.to_i
   question = DB[:questions][:id => step]
   if question.nil?
@@ -189,5 +198,6 @@ post %r{^/step/(\d+)} do |i|
 end
 
 get "/done" do
+  establish_session(request)
   erb :done
 end

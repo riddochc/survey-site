@@ -1,9 +1,15 @@
 #!/usr/bin/env ruby
 
 require 'sequel'
+require 'logger'
+require 'yaml'
 
+# DB = Sequel.connect("sqlite://survey.sqlite3")
 
-DB = Sequel.connect("sqlite://survey.sqlite3")
+config = YAML.load_file("/etc/surveyconfig.yaml")
+config[:logger] = Logger.new('db.log')
+
+DB = Sequel.connect(config)
 
 DB.create_table :question_types do
   primary_key :id
