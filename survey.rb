@@ -20,7 +20,7 @@ enable :sessions
 set :session_secret, config['session-secret']
 
 def users_hospice(question, user, session, params)
-    puts "Processing step 1, got text: " + params["ac-input"]
+    #puts "Processing step 1, got text: " + params["ac-input"]
     if params["ac-input"] =~ /^([A-Za-z' ]+)$/  # No funny characters in the name.
       cleaned_input = $1
     else
@@ -34,15 +34,15 @@ def users_hospice(question, user, session, params)
     end
     answer_set_id = DB[:answer_sets].insert(:timestamp => Time.now(), :question_id => question[:id], :user_id => user)
     answer_id = DB[:hospice_answers].insert(:answer_set_id => answer_set_id, :hospice_id => hospice_id)
-    puts "Recorded answer: #{answer_id}"
+    #puts "Recorded answer: #{answer_id}"
 end
 
 def work_function_ranking(question, user, session, params)
   mapping = session[:work_function_mapping]
   values = mapping.values
   rearrangement = params["arrangement"].scan(/item_\d+/).map {|i| i =~ /(\d+)$/; $1.to_i }
-  puts "Rearrangement: " + rearrangement.join(',')
-  puts "Mapping values: " + values.sort.join(',')
+  #puts "Rearrangement: " + rearrangement.join(',')
+  #puts "Mapping values: " + values.sort.join(',')
   unless (rearrangement.sort == values.sort)
     redirect "/step/#{question[:id]}", 302
   end
@@ -50,7 +50,7 @@ def work_function_ranking(question, user, session, params)
   answer_set_id = DB[:answer_sets].insert(:timestamp => Time.now(),
                                           :question_id => question[:id],
                                           :user_id => user)
-  puts "Proper arrangement: " + order_by_dbid.join(',')
+  #puts "Proper arrangement: " + order_by_dbid.join(',')
   order_by_dbid.each.with_index do |dbid, rank|
     DB[:rank_answers].insert(:answer_set_id => answer_set_id,
                              :work_function_id => dbid,
@@ -59,10 +59,10 @@ def work_function_ranking(question, user, session, params)
 end
 
 def work_function_selection(question, user, session, params)
-  puts "Work function selection..."
+  #puts "Work function selection..."
   mapping = session[:work_function_mapping]
   values = mapping.values
-  puts "Params inspection: " + params.inspect
+  #puts "Params inspection: " + params.inspect
   selections = params.keys
                  .grep(/fn_\d+$/) {|m| m[/\d+$/].to_i }
                  .map {|i| (mapping.invert)[i]}
@@ -97,10 +97,10 @@ end
 # If the browser isn't already from around here, start them 
 # at the right place, make a new user, and give a cookie.
 def establish_session(request)
-  puts "Request for: #{request.url} - running before..."
+  #puts "Request for: #{request.url} - running before..."
   if ((session[:ip_address] != request.ip) or
       (session[:created_at] < (Time.now() - 60 * 20))) # Session older than 20 minutes?
-    puts "This looks like a new user!"
+    #puts "This looks like a new user!"
     session[:ip_address] = request.ip
     session[:created_at] = Time.now()
     user_id = DB[:users].insert(:ip_address => request.ip,
