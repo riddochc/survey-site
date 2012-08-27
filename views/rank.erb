@@ -1,7 +1,7 @@
 <!-- This page is for a ranking question... -->
 <script src="/js/jquery.ui.touch-punch.min.js"></script>
 <p class="instructions"><%= q[:instructions] %></p>
-  <form method="post" action="/step/<%= s %>">
+  <form method="post" action="/survey/step/<%= s %>">
     <div class="">
           <ul id="sortable"><% i = 1 %>
               <% work_fns.each do |fn| %>

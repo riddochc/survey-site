@@ -24,7 +24,7 @@ def users_hospice(question, user, session, params)
     if params["ac-input"] =~ /^([A-Za-z' ]+)$/  # No funny characters in the name.
       cleaned_input = $1
     else
-      redirect "/step/#{question[:id]}", 302
+      redirect "/survey/step/#{question[:id]}", 302
     end
     hospice = DB[:hospices][:name => cleaned_input]
     if hospice.nil?
@@ -44,7 +44,7 @@ def work_function_ranking(question, user, session, params)
   #puts "Rearrangement: " + rearrangement.join(',')
   #puts "Mapping values: " + values.sort.join(',')
   unless (rearrangement.sort == values.sort)
-    redirect "/step/#{question[:id]}", 302
+    redirect "/survey/step/#{question[:id]}", 302
   end
   order_by_dbid = rearrangement.map {|i| (mapping.invert)[i]}
   answer_set_id = DB[:answer_sets].insert(:timestamp => Time.now(),
@@ -63,13 +63,11 @@ def work_function_selection(question, user, session, params)
   mapping = session[:work_function_mapping]
   values = mapping.values
   #puts "Params inspection: " + params.inspect
-  selections = params.keys
-                 .grep(/fn_\d+$/) {|m| m[/\d+$/].to_i }
-                 .map {|i| (mapping.invert)[i]}
+  selections = params.keys.grep(/fn_\d+$/) {|m| m[/\d+$/].to_i }.map {|i| (mapping.invert)[i]}
   # Sanity check:
   unless (DB[:work_functions].where(:id => selections).count ==
           selections.length)
-    redirect "/step/#{question[:id]}", 302
+    redirect "/survey/step/#{question[:id]}", 302
   end
 
   DB.transaction do
@@ -107,13 +105,14 @@ def establish_session(request)
                           :referrer => request.referrer,
                           :created_at => session[:created_at])
     session[:user_id] = user_id
-    redirect "/step/1", 302
+    redirect "/survey/step/1", 302
   end
 end
 
 get "/" do
+  puts "User requested /survey, redirecting to step 1"
   establish_session(request)
-  redirect "/step/1", 302
+  redirect "/survey/step/1", 302
 end
 
 get %r{^/step/(\d+)} do |i|
@@ -121,7 +120,7 @@ get %r{^/step/(\d+)} do |i|
   step = i.to_i
   question = DB[:questions][:id => step]
   if question.nil?
-    redirect "/step/1", 302
+    redirect "/survey/step/1", 302
   end
   question_type = question[:question_type_id]
 
@@ -159,11 +158,11 @@ post %r{^/step/(\d+)} do |i|
   step = i.to_i
   question = DB[:questions][:id => step]
   if question.nil?
-    redirect "/step/1", 302
+    redirect "/survey/step/1", 302
   end
   number_of_questions = DB[:questions].count
   if step > number_of_questions
-    redirect "/done", 302
+    redirect "/survey/done", 302
   end
 
   user = session[:user_id]
@@ -188,10 +187,10 @@ post %r{^/step/(\d+)} do |i|
   # Move on to the next question or step.
   if (step < number_of_questions)
     next_step = i.to_i.succ
-    next_path = "/step/#{next_step}"
+    next_path = "/survey/step/#{next_step}"
     redirect next_path, 302
   elsif (number_of_questions == step)
-    redirect "/done", 302
+    redirect "/survey/done", 302
   else
     "Hmm. Not sure what to do here."
   end
@@ -201,3 +200,8 @@ get "/done" do
   establish_session(request)
   erb :done
 end
+
+#get "*" do
+#  puts "Catchall!"
+#  "This was caught..."
+#end

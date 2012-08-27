@@ -2,7 +2,7 @@
   <div class="question">
     <p class="instructions"><%= q[:instructions] %></p>
   </div>
-  <form method="post" action="/step/<%= s %>">
+  <form method="post" action="/survey/step/<%= s %>">
       <div id='workfns'>
         <% work_fns.each.with_index do |fn, i| i += 1 %>
           <p><input type='checkbox' name="fn_<%= i %>" />
