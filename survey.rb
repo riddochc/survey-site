@@ -11,6 +11,9 @@ require 'yaml'
 
 #set :server, :thin
 
+# Problems with IE9, it seems...
+set :protection, except: :session_hijacking
+
 config = YAML.load_file("/etc/surveyconfig.yaml")
 config[:logger] = Logger.new('db.log')
 
