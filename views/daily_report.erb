@@ -1,0 +1,56 @@
+Survey results compiled:
+  From <%= from.readable %>
+  To <%= to.readable %>
+
+There were <%= hospice_answers.count %> answer(s) that provided the name of a hospice:
+<% hospice_answers.each do |id, users| %>
+<%= Hospices[id].name%> had <%= users.length %> users:
+  <% users.each do |u| ; user = Users[u[:user_id]] %>
+  A user (#<%= id %>) on <%= u[:timestamp].readable %>:
+% city = geo.city(user[:ip_address]).city_name
+  Connecting from <%= user[:ip_address] %><%= (city == "" ? "" : ", which looks like it's #{city}") %>
+  The user arrived via <%= user[:referrer] || "no known URL" %>
+  <% end %>
+<% end %>
+
+See the bottom of the report for the list of work functions referenced.
+
+Answers to question 2 (<%= Questions[2].instructions %>)
+
+
+% data = ranked_or_selected(2, [from, to])
+% data.each do |d|
+User <%= "%5d" % d[0] %>:   <%= d[1].sort.join(', ') %>
+% end
+
+Answers to question 3 (<%= Questions[3].instructions %>)
+
+% data = ranked_or_selected(2, [from, to])
+% data.each do |d|
+User <%= "%5d" % d[0] %>:   <%= d[1].sort.join(', ') %>
+% end
+
+Answers to question 4 (<%= Questions[4].instructions %>)
+
+% data = ranked_or_selected(4, [from, to])
+% data.each do |d|
+User <%= "%5d" % d[0] %>:   <%= d[1].map {|i| "%2d" % i }.join(', ') %>
+% end
+
+Answers to question 5 (<%= Questions[5].instructions %>)
+
+% data = ranked_or_selected(5, [from, to])
+% data.each do |d|
+User <%= "%5d" % d[0] %>:   <%= d[1].map {|i| "%2d" % i }.join(', ') %>
+% end
+
+Users' comments:
+
+% q6.each do |d|
+User <%= "%5d" % d[:user_id] %>: "<%= d[:comment].strip.gsub(/[^A-Za-z1-9\/ '.-]/, '') %>"
+% end
+
+<% WorkFunctions.each do |wf| %>
+  <%= wf.id %>: <%= wf.work_function %>
+<% end %>
+
