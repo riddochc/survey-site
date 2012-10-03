@@ -1,6 +1,9 @@
 #!/usr/bin/env ruby
 
-require './models.rb'
+thisdir = File.expand_path(File.dirname(__FILE__))
+$:.push thisdir
+
+require 'models.rb'
 require 'erb'
 require 'geoip'
 
@@ -67,16 +70,16 @@ class Time
   end
 end
 
-erbinput = File.open('views/daily_report.erb', 'r').read
+erbinput = File.open(thisdir + '/views/daily_report.erb', 'r').read
 
-from = Time.at(Time.now() - (60 * 60 * ARGV[0].to_i))
+#from = Time.at(Time.now() - (60 * 60 * ARGV[0].to_i))
+from = Time.at(Time.now() - (60*60*48))
 to = Time.now()
-geo = GeoIP.new('GeoLiteCity.dat')
+geo = GeoIP.new(thisdir + '/GeoLiteCity.dat')
 
 hospice_answers = get_answers(1, [from, to] ).all.group_by {|a| a[:hospice_id] }
 
 q6 = get_answers(6, [from, to] ).all
-
 
 erb = ERB.new(erbinput, nil, "%<>")
 erb.run(binding)
